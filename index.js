@@ -15,13 +15,19 @@ const tweetshot = async ($url, $path) => {
         // Cleanup the tweet.
         await page.evaluate(() => {
             jQuery(document).ready(function() {
-                jQuery('.stats').hide();
-                jQuery('.follow-bar').hide();
-                jQuery('.translate-button').hide();
-                jQuery('.stream-item-footer').hide();
-                jQuery('.ProfileTweet-action').hide();
-                jQuery('.replies-to').hide();
-                jQuery('.permalink-tweet').css('border-radius', '0px');
+                jQuery(`
+                    .stats, .follow-bar,
+                    .translate-button,
+                    .stream-item-footer,
+                    .ProfileTweet-action,
+                    .replies-to,
+                    .permalink-footer
+                `).hide();
+                jQuery('.permalink-tweet')
+                    .css('border-radius', '0px')
+                    .css('border', '0px');
+                jQuery('.PermalinkOverlay-with-background').css('background', 'white');
+                jQuery('.PermalinkOverlay .permalink').css('border', '0px');
             });
         });
 
@@ -49,7 +55,7 @@ const tweetshot = async ($url, $path) => {
 
             if (!rect)
                 throw Error(`Could not find element that matches selector: ${selector}.`);
-
+            await page.setViewport({width: 1000, height: rect.height + rect.top - padding, deviceScaleFactor: 1});
             return await page.screenshot({
                 path,
                 clip: {
@@ -60,11 +66,11 @@ const tweetshot = async ($url, $path) => {
                 }
             });
         }
-
+        await setTimeout(async() => {}, 1000);
         await screenshotDOMElement({
             path: $path,
             selector: 'div.tweet.permalink-tweet',
-            padding: 0
+            padding: -16
         });
 
         browser.close();
