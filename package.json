@@ -1,0 +1,19 @@
+{
+  "name": "tweetshot",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "bin": "./bin/cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Tarek Djebali",
+    "email": "tarekdj@gmail.com",
+  },
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^2.15.1",
+    "puppeteer": "^1.4.0"
+  }
+}

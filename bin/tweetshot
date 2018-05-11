@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const tweetshot = require('../index');
+
+program
+  .version('0.0.1')
+  .usage(`<url> <path>
+
+  Example:
+
+  tweetshot https://twitter.com/stolinski/status/994690885991329792 ./tweet.png
+  `)
+  .arguments('<url> <path>')
+  .action(function (url, path) {
+    urlValue = url;
+    pathValue = path;
+    try {
+      tweetshot(url, path);
+    }
+    catch (err) {
+      console.error(err);
+    }
+  });
+
+program.parse(process.argv);
+
+if (typeof urlValue === 'undefined' || typeof pathValue === 'undefined') {
+   console.error('No arguments given!');
+   process.exit(1);
+}
