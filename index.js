@@ -1,82 +1,101 @@
-const puppeteer = require('puppeteer');
+const axios = require('axios');
+const cheerio = require('cheerio');
+var webshot = require('webshot');
+
+const mre = new RegExp(/https:\/\/mobile.twitter.com\/.*\/status\/[0-9]*/g);
+const re = new RegExp(/https:\/\/(www.|)twitter.com\/.*\/status\/[0-9]*/g);
+
+const formatUrl = (url) => {
+    if (url.match(re)) {
+        let res;
+        res = url.replace('https://www.twitter.com', 'https://mobile.twitter.com');
+        res = url.replace('https://twitter.com', 'https://mobile.twitter.com');
+        return res;
+    }
+
+    if (url.match(mre)) {
+        return url;
+    }
+
+    throw new Error('Bad url format.');
+}
+
+const getTweetData = async (url) => {
+    // First, we need to format the url.
+    let formattedUrl = formatUrl(url);
+    try {
+        // Try to get the data from twitter.
+        const response = await axios.get(formattedUrl);
+        const $ = cheerio.load(response.data);
+
+        // Extract infos from the incoming data.
+        const imgSrc = $('table.main-tweet td.avatar a img').attr('src');
+        const fullName = $('table.main-tweet td.user-info .fullname a strong').text();
+        const userName = $('table.main-tweet td.user-info .user-info-username .username').text().trim();
+        const content = $('table.main-tweet td.tweet-content .tweet-text').text().trim();
+        const meta = $('table.main-tweet td.tweet-content .metadata').text().trim();
+
+        //Return the result
+        return {
+            imgSrc,
+            fullName,
+            userName,
+            content,
+            meta
+        }
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+const defaultOptions = {
+    outerBg: "#fff",
+    outerWitdh: "600",
+    outerPadding: "10",
+    outerBRadius: "5"
+}
+
+const renderTweetshot = async (data, path = './tweet1.png', options = defaultOptions) => {
+
+    const html = `
+    <html>
+        <head>
+            <style>
+              .outer {
+                  background: ${options.outerBg};
+                  width: ${options.outerWitdh}px;
+                  padding: ${options.outerPadding}px;
+                  border-radius: ${options.outerBRadius}px;
+              }
+            </style>
+        </head>
+        <body>
+            <div class="outer">
+                <div class="avatar"><img src="${data.imgSrc}" /></div>
+                <div class="content">${data.content}</div>
+                <div class="fullname">${data.fullName}</div>
+                <div class="username">${data.userName}</div>
+                <div class="meta">${data.meta}"</div>
+            </div>
+        </body>
+    </html>
+    `;
+
+    webshot(html, path, {siteType:'html'}, function(err) {
+        if (err) {
+            console.error(err);
+        }
+    });
+
+}
 
 const tweetshot = async ($url, $path) => {
     try {
-        // launch the headless browser
-        const browser = await puppeteer.launch({headless: true});
-        const page = await browser.newPage();
-        // Adjustments particular to this page to ensure we hit desktop breakpoint.
-        page.setViewport({width: 1000, height: 600, deviceScaleFactor: 1});
-
-        // Goto tweet page
-        await page.goto($url);
-        await page.waitForSelector('div.js-tweet-stats-container.tweet-stats-container');
-
-        // Cleanup the tweet.
-        await page.evaluate(() => {
-            jQuery(document).ready(function() {
-                jQuery(`
-                    .stats, .follow-bar,
-                    .translate-button,
-                    .stream-item-footer,
-                    .ProfileTweet-action,
-                    .replies-to,
-                    .permalink-footer
-                `).hide();
-                jQuery('.permalink-tweet')
-                    .css('border-radius', '0px')
-                    .css('border', '0px');
-                jQuery('.PermalinkOverlay-with-background').css('background', 'white');
-                jQuery('.PermalinkOverlay .permalink').css('border', '0px');
-            });
-        });
-
-        /**
-         * Takes a screenshot of a DOM element on the page, with optional padding.
-         *
-         * @param {!{path:string, selector:string, padding:(number|undefined)}=} opts
-         * @return {!Promise<!Buffer>}
-         */
-        async function screenshotDOMElement(opts = {}) {
-            const padding = 'padding' in opts ? opts.padding : 0;
-            const path = 'path' in opts ? opts.path : null;
-            const selector = opts.selector;
-
-            if (!selector)
-                throw Error('Please provide a selector.');
-
-            const rect = await page.evaluate(selector => {
-                const element = document.querySelector(selector);
-                if (!element)
-                    return null;
-                const {x, y, width, height} = element.getBoundingClientRect();
-                return {left: x, top: y, width, height, id: element.id};
-            }, selector);
-
-            if (!rect)
-                throw Error(`Could not find element that matches selector: ${selector}.`);
-            await page.setViewport({width: 1000, height: rect.height + rect.top - padding, deviceScaleFactor: 1});
-            return await page.screenshot({
-                path,
-                clip: {
-                    x: rect.left - padding,
-                    y: rect.top - padding,
-                    width: rect.width + padding * 2,
-                    height: rect.height + padding * 2
-                }
-            });
-        }
-        await setTimeout(async() => {}, 1000);
-        await screenshotDOMElement({
-            path: $path,
-            selector: 'div.tweet.permalink-tweet',
-            padding: -16
-        });
-
-        browser.close();
+        var data = await getTweetData($url);
+        renderTweetshot(data, $path);
     }
-    catch (error) {
-        throw new Error(error.message);
+    catch (err) {
+       console.error(err);
     }
 }
 
