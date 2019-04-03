@@ -89,7 +89,7 @@ const renderTweetshot = async (data, path = './tweet1.png', options = defaultOpt
     </html>
     `;
 
-    webshot(html, path, {siteType:'html'}, function(err) {
+    webshot(html, path, {siteType:'html', captureSelector:'.outer'}, function(err) {
         if (err) {
             console.error(err);
         }
