@@ -52,7 +52,9 @@ const defaultOptions = {
     outerBg: "#fff",
     outerWitdh: "600",
     outerPadding: "10",
-    outerBRadius: "5"
+    outerBRadius: "5",
+    font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+    avatarRadius: "5"
 }
 
 const renderTweetshot = async (data, path = './tweet1.png', options = defaultOptions) => {
@@ -61,11 +63,17 @@ const renderTweetshot = async (data, path = './tweet1.png', options = defaultOpt
     <html>
         <head>
             <style>
+              body {
+                  font-family: ${options.font}
+              }
               .outer {
                   background: ${options.outerBg};
                   width: ${options.outerWitdh}px;
                   padding: ${options.outerPadding}px;
                   border-radius: ${options.outerBRadius}px;
+              }
+              .avatar img{
+                  border-radius: ${options.avatarRadius}px;
               }
             </style>
         </head>
